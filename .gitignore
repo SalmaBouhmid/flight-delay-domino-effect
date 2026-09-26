@@ -1,0 +1,20 @@
+# Fichier Kaggle complet (143 Mo, au-dessus de la limite GitHub de 100 Mo).
+# À télécharger depuis Kaggle : voir README, section « Lancer le projet ».
+data/raw/Combined_Flights_2022.parquet
+*.zip
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environnements et secrets (ne jamais publier d'identifiants Kaggle)
+.venv/
+venv/
+.env
+kaggle.json
+
+# Système
+.DS_Store
+Thumbs.db
+~$*.pptx
