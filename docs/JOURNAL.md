@@ -166,7 +166,7 @@ Palette vérifiée pour les daltoniens. Titres = la conclusion du graphique (pas
 | 9 | Suite du projet | Planning des 2 semaines |
 
 **Le texte à dire est dans les notes de chaque slide** (PowerPoint → Affichage → Page de notes).
-⚠️ Ajouter son nom sur la slide 1. Les graphiques sont des graphiques PowerPoint natifs (modifiables).
+Les graphiques sont des graphiques PowerPoint natifs (modifiables).
 
 ---
 
