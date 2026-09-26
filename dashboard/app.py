@@ -14,8 +14,11 @@ import streamlit as st
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
 from analysis import effet_domino, indicateurs_cles, taux_de_retard_par, tableau_croise_retard, vols_partis
-from preprocessing import charger_vols_propres
-from sampling import echantillon_stratifie_par_jour
+from data_loading import charger_vols_atlanta
+from preprocessing import charger_vols_propres, colonnes_constantes
+from sampling import (GRAINE, METHODES, TAILLE_ECHANTILLON, classement_des_methodes, echantillon_stratifie_par_jour,
+                      erreurs_par_rapport_a_la_population, indicateurs, score_representativite,
+                      stabilite_des_methodes)
 from visualizations import BLEU, ENCRE_SECONDAIRE, GRIS, ORANGE, PLOTLY_LAYOUT
 
 st.set_page_config(page_title="Effet domino des retards — Atlanta", page_icon="✈️", layout="wide")
@@ -28,6 +31,19 @@ MINIMUM_VOLS_DOMINO = 100  # en dessous, le pourcentage d'un groupe est trop fra
 def charger_donnees():
     """Charge le dataset nettoyé une seule fois (mis en cache par Streamlit)."""
     return charger_vols_propres()
+
+
+@st.cache_data
+def charger_donnees_brutes():
+    """Charge le dataset brut (avant nettoyage), pour l'onglet Qualité des données."""
+    return charger_vols_atlanta()
+
+
+@st.cache_data(show_spinner="Calcul du classement : 30 tirages par méthode…")
+def classement_en_cache(nb_tirages=30):
+    """Répète chaque méthode d'échantillonnage `nb_tirages` fois et classe les méthodes (calcul mis en cache)."""
+    stabilite = stabilite_des_methodes(charger_donnees(), nb_tirages=nb_tirages)
+    return stabilite, classement_des_methodes(stabilite)
 
 
 def mise_en_forme(figure, hauteur=380):
@@ -121,8 +137,10 @@ else:
 st.divider()
 
 # --------------------------------------------------------------------------- Onglets
-onglet_vue, onglet_domino, onglet_comparer, onglet_destinations, onglet_insights = st.tabs(
-    ["📈 Vue générale", "🔗 Effet domino", "⚖️ Comparer des compagnies", "🗺️ Destinations", "💡 Insights"]
+(onglet_vue, onglet_domino, onglet_comparer, onglet_destinations,
+ onglet_echantillonnage, onglet_qualite, onglet_insights) = st.tabs(
+    ["📈 Vue générale", "🔗 Effet domino", "⚖️ Comparer des compagnies", "🗺️ Destinations",
+     "🧪 Échantillonnage", "🩺 Qualité des données", "💡 Insights"]
 )
 
 with onglet_vue:
@@ -304,6 +322,138 @@ with onglet_destinations:
     figure.update_yaxes(range=[-60, 300])
     st.plotly_chart(mise_en_forme(figure, 450), width="stretch")
     st.caption("Échantillon stratifié par jour (3 000 vols au maximum) pour rester lisible. Zoom possible à la souris.")
+
+with onglet_echantillonnage:
+    st.subheader("Laboratoire d'échantillonnage")
+    st.markdown(
+        "Tirez un échantillon avec la méthode de votre choix et comparez-le immédiatement à la **population "
+        "complète (54 461 vols)**. Les filtres de la barre latérale ne s'appliquent pas à cet onglet."
+    )
+    colonne_methode, colonne_taille, colonne_graine = st.columns([2, 2, 1])
+    nom_methode = colonne_methode.selectbox("Méthode", list(METHODES))
+    taille = colonne_taille.slider("Taille visée (vols)", 1000, 15000, TAILLE_ECHANTILLON, step=1000,
+                                   help="Pour le stratifié temporel et les grappes, la taille obtenue est approximative.")
+    graine = int(colonne_graine.number_input("Graine", min_value=0, max_value=9999, value=GRAINE,
+                                             help="Même graine = même échantillon (reproductibilité)."))
+
+    echantillon = METHODES[nom_methode](vols, taille=taille, graine=graine)
+    valeurs_echantillon = indicateurs(echantillon)
+    score = score_representativite(vols, echantillon)
+
+    colonnes = st.columns(4)
+    colonnes[0].metric("Vols dans l'échantillon", format_fr(len(echantillon), 0))
+    colonnes[1].metric("Score de représentativité", f"{format_fr(score)} / 100",
+                       help="100 − moyenne des erreurs relatives sur 6 indicateurs. 100 = identique à la population.")
+    colonnes[2].metric("Lignes en double", format_fr(valeurs_echantillon["Lignes en double"], 0),
+                       help="Seul le bootstrap (tirage avec remise) peut tirer plusieurs fois le même vol.")
+    colonnes[3].metric("Jours couverts", f"{valeurs_echantillon['Nombre de jours couverts']} / 61")
+
+    erreurs = erreurs_par_rapport_a_la_population(vols, echantillon)
+    st.dataframe(
+        erreurs.style.format({"population": "{:.2f}", "échantillon": "{:.2f}", "erreur absolue": "{:.2f}",
+                              "erreur relative (%)": "{:.1f} %"}).background_gradient(
+            subset=["erreur relative (%)"], cmap="Oranges", vmin=0, vmax=30),
+        width="stretch",
+    )
+    st.caption("Erreur absolue = |échantillon − population|. Erreur relative = erreur absolue / population × 100. "
+               "Plus la case est orange, plus l'échantillon s'éloigne de la population.")
+
+    colonne_gauche, colonne_droite = st.columns(2)
+    figure = go.Figure()
+    for donnees, nom, couleur in [(vols_partis(vols), "Population", BLEU), (vols_partis(echantillon), "Échantillon", ORANGE)]:
+        figure.add_trace(go.Histogram(x=donnees["DepDelay"].clip(-30, 180), name=nom, histnorm="percent",
+                                      xbins=dict(start=-30, end=181, size=5), marker_color=couleur, opacity=0.55,
+                                      hovertemplate="%{x} min : %{y:.1f} % des vols<extra>" + nom + "</extra>"))
+    figure.update_layout(barmode="overlay", title="Distribution du retard au départ", legend=dict(orientation="h", y=-0.25))
+    figure.update_xaxes(title="Retard au départ (min, limité à 180)")
+    figure.update_yaxes(title="% des vols", ticksuffix=" %")
+    colonne_gauche.plotly_chart(mise_en_forme(figure), width="stretch")
+
+    parts = (vols["compagnie"].value_counts(normalize=True).rename("Population").to_frame()
+             .join(echantillon["compagnie"].value_counts(normalize=True).rename("Échantillon")).fillna(0) * 100)
+    parts = parts.sort_values("Population")
+    figure = go.Figure()
+    for nom, couleur in [("Population", BLEU), ("Échantillon", ORANGE)]:
+        figure.add_trace(go.Bar(y=parts.index, x=parts[nom], name=nom, orientation="h", marker_color=couleur,
+                                hovertemplate="%{y} : %{x:.1f} %<extra>" + nom + "</extra>"))
+    figure.update_layout(barmode="group", title="Part de chaque compagnie", legend=dict(orientation="h", y=-0.25))
+    figure.update_xaxes(title="% des vols", ticksuffix=" %")
+    colonne_droite.plotly_chart(mise_en_forme(figure), width="stretch")
+
+    st.subheader("Classement des méthodes")
+    st.markdown("Un seul tirage peut être « chanceux » : chaque méthode est répétée **30 fois** (graines 0 à 29), "
+                "puis classée selon son score moyen.")
+    stabilite, classement = classement_en_cache()
+    colonne_gauche, colonne_droite = st.columns([3, 2])
+    colonne_gauche.dataframe(
+        classement.rename(columns={"rang": "Rang", "score_moyen": "Score moyen", "score_minimum": "Pire score",
+                                   "ecart_type_pct_retard": "Écart-type % retard"}),
+        width="stretch",
+        column_config={"Écart-type % retard": st.column_config.NumberColumn(
+            help="Variation du % de vols en retard d'un tirage à l'autre (en points)")},
+    )
+    figure = px.strip(stabilite, x="score", y="méthode", category_orders={"méthode": list(classement.index)},
+                      labels={"score": "Score de représentativité (30 tirages)", "méthode": ""})
+    figure.update_traces(marker=dict(color=BLEU, size=6, opacity=0.5), hovertemplate="score %{x:.1f}<extra></extra>")
+    colonne_droite.plotly_chart(mise_en_forme(figure, 340), width="stretch")
+    st.info(
+        "**Lecture** : les méthodes aléatoires, systématique et stratifiées proportionnelles sont fiables (score ≈ 96). "
+        "Les **grappes** sont instables car les retards varient énormément d'un jour à l'autre. Le **stratifié non "
+        "proportionnel** est dernier par construction : chaque compagnie a le même nombre de vols, donc Delta passe de "
+        "66 % à 12,5 % — il sert à étudier les petites compagnies, pas à estimer la population."
+    )
+
+with onglet_qualite:
+    st.subheader("Qualité des données brutes")
+    st.markdown("Contrôles réalisés sur le fichier **avant nettoyage** (54 461 vols × 61 colonnes).")
+    vols_bruts = charger_donnees_brutes()
+    colonnes = st.columns(4)
+    colonnes[0].metric("Lignes", format_fr(len(vols_bruts), 0))
+    colonnes[1].metric("Colonnes", vols_bruts.shape[1])
+    colonnes[2].metric("Lignes en double", format_fr(vols_bruts.duplicated().sum(), 0))
+    colonnes[3].metric("Cellules manquantes", f"{format_fr(vols_bruts.isna().mean().mean() * 100, 2)} %")
+
+    colonne_gauche, colonne_droite = st.columns(2)
+    manquants = (vols_bruts.isna().mean() * 100).loc[lambda serie: serie > 0].sort_values()
+    figure = px.bar(x=manquants.values, y=manquants.index, orientation="h",
+                    labels={"x": "% des vols sans valeur", "y": ""})
+    figure.update_traces(marker_color=BLEU, hovertemplate="%{y} : %{x:.2f} %<extra></extra>")
+    figure.update_layout(title="Valeurs manquantes par colonne")
+    figure.update_xaxes(ticksuffix=" %")
+    colonne_gauche.plotly_chart(mise_en_forme(figure, 460), width="stretch")
+    colonne_gauche.caption(f"Toutes expliquées : {vols_bruts['Cancelled'].sum()} vols annulés (pas d'heure de départ) et "
+                           f"{vols_bruts['Diverted'].sum()} vols déviés (pas d'arrivée). Gardées, non remplies.")
+
+    retards = vols_bruts["DepDelay"].dropna()
+    q1, q3 = retards.quantile([0.25, 0.75])
+    limite = q3 + 1.5 * (q3 - q1)
+    figure = go.Figure(go.Box(x=retards, name="", marker_color=BLEU, boxpoints=False, hoverinfo="skip"))
+    figure.update_layout(title="Valeurs aberrantes du retard au départ")
+    figure.update_xaxes(title="Retard au départ (min, axe limité à 120)", range=[-30, 120])
+    colonne_droite.plotly_chart(mise_en_forme(figure, 220), width="stretch")
+    colonne_droite.markdown(
+        f"- Règle de l'IQR : Q1 = {q1:.0f} min, Q3 = {q3:.0f} min, limite = **{format_fr(limite)} min**\n"
+        f"- Vols au-dessus de la limite : **{format_fr((retards > limite).mean() * 100)} %** "
+        f"(maximum : {format_fr(retards.max(), 0)} min)\n"
+        "- **Gardés** : ce sont de vrais retards, pas des erreurs de saisie."
+    )
+
+    constantes = colonnes_constantes(vols_bruts)
+    part_valeur_dominante = vols_bruts.apply(lambda colonne: colonne.value_counts(normalize=True, dropna=False).iloc[0])
+    quasi_constantes = part_valeur_dominante[(part_valeur_dominante >= 0.98) & (part_valeur_dominante < 1)]
+    colonne_droite.markdown(
+        f"**{len(constantes)} colonnes constantes** (une seule valeur, supprimées au nettoyage) : "
+        + ", ".join(f"`{nom}`" for nom in constantes)
+    )
+    colonne_droite.markdown(
+        f"**{len(quasi_constantes)} colonnes quasi constantes** (une valeur sur au moins 98 % des lignes, gardées "
+        "car elles portent l'information rare étudiée) : "
+        + ", ".join(f"`{nom}` ({format_fr(part * 100)} %)" for nom, part in quasi_constantes.items())
+    )
+    colonne_droite.markdown(
+        "**Types** : `FlightDate` lue comme vraie date ; `CRSDepTime` au format HHMM (1435 = 14 h 35) "
+        "convertie en heure (`heure_depart_prevue`)."
+    )
 
 with onglet_insights:
     st.subheader("Ce que disent les données")
