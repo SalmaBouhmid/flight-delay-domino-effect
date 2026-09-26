@@ -8,13 +8,13 @@ Il reste deux actions à faire **avec vos comptes** (je ne peux pas me connecter
 ## 1. Publier le code sur GitHub (≈ 5 min)
 
 1. Aller sur <https://github.com/new>.
-2. Nom du dépôt : `dataviz-retards-vols` · visibilité **Public** · **ne cochez rien** (pas de README, pas de .gitignore : ils existent déjà).
+2. Nom du dépôt : `flight-delay-domino-effect` · visibilité **Public** · **ne cochez rien** (pas de README, pas de .gitignore : ils existent déjà).
 3. Cliquer sur **Create repository**.
-4. Dans un terminal, depuis le dossier du projet (remplacez `VOTRE-PSEUDO`) :
+4. Dans un terminal, depuis le dossier du projet :
 
 ```bash
 cd C:\Users\123\Documents\dataviz-retards-vols
-git remote add origin https://github.com/VOTRE-PSEUDO/dataviz-retards-vols.git
+git remote add origin https://github.com/SalmaBouhmid/flight-delay-domino-effect.git
 git push -u origin main
 ```
 
@@ -26,7 +26,7 @@ Les fichiers de travail (19 Mo) sont envoyés, donc le projet fonctionne directe
 1. Aller sur <https://share.streamlit.io> et se connecter **avec GitHub**.
 2. **Create app** → *Deploy a public app from GitHub*.
 3. Remplir :
-   - Repository : `VOTRE-PSEUDO/dataviz-retards-vols`
+   - Repository : `SalmaBouhmid/flight-delay-domino-effect`
    - Branch : `main`
    - Main file path : `dashboard/app.py`
    - *Advanced settings* → Python version : **3.12**
