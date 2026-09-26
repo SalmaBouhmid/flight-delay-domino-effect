@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rapport — L'effet domino des retards</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 16mm 16mm; }
+  :root { --navy:#14213d; --bleu:#2a78d6; --orange:#eb6834; --texte:#1f2937; --gris:#6b7280; --teinte:#eef3fa; --teinte-o:#fdeee7; --ligne:#e1e0d9; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Calibri, Arial, sans-serif; color: var(--texte); font-size: 10.3pt; line-height: 1.42; margin: 0; background: #fff; }
+  h1 { font-size: 21pt; color: var(--navy); margin: 0 0 2mm; line-height: 1.15; }
+  h2 { font-size: 13.5pt; color: var(--navy); margin: 5mm 0 2mm; break-after: avoid; }
+  h3 { font-size: 11pt; color: var(--navy); margin: 3.5mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2mm; }
+  ul, ol { margin: 0 0 2mm; padding-left: 5.5mm; }
+  li { margin-bottom: 0.8mm; }
+  .entete { border-bottom: 1px solid var(--ligne); padding-bottom: 3mm; margin-bottom: 3mm; }
+  .sous-titre { color: var(--gris); font-size: 11pt; }
+  .meta { color: var(--gris); font-size: 9pt; margin-top: 1.5mm; }
+  .question { background: var(--navy); color: #fff; padding: 3mm 4mm; border-radius: 2mm; font-weight: 600; font-size: 11.5pt; margin: 2mm 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.2pt; margin: 1.5mm 0 3mm; break-inside: avoid; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 1.3mm 2mm; font-weight: 600; }
+  td { border-bottom: 1px solid var(--ligne); padding: 1.2mm 2mm; vertical-align: top; }
+  tr.fort td { background: var(--teinte-o); font-weight: 600; }
+  .grille { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; break-inside: avoid; margin: 1mm 0 2mm; }
+  figure { margin: 0 0 2mm; break-inside: avoid; }
+  figure img { width: 100%; max-height: 60mm; object-fit: contain; display: block; border: 1px solid var(--ligne); border-radius: 1mm; background: #fcfcfb; }
+  figcaption { font-size: 8.6pt; color: var(--gris); margin-top: 1mm; }
+  .chiffres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 2mm 0 3mm; break-inside: avoid; }
+  .chiffre { background: var(--teinte); border-radius: 2mm; padding: 2.5mm 3mm; }
+  .chiffre.o { background: var(--teinte-o); }
+  .chiffre b { display: block; font-size: 17pt; color: var(--bleu); line-height: 1.1; }
+  .chiffre.o b { color: var(--orange); }
+  .chiffre span { font-size: 8.6pt; }
+  .encadre { background: var(--teinte); border-radius: 2mm; padding: 2.5mm 3.5mm; margin: 2mm 0 3mm; break-inside: avoid; }
+  .insight { margin-bottom: 1.6mm; }
+  .insight b { color: var(--navy); }
+  .saut { break-before: page; }
+  .petit { font-size: 8.8pt; color: var(--gris); }
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <h1>L'effet domino des retards</h1>
+  <div class="sous-titre">Analyse des vols au départ d'Atlanta pendant l'été 2022 et dashboard interactif</div>
+  <div class="meta">Projet final — Module Visualisation des Données · Salma Bouhmid · Septembre 2026</div>
+</div>
+
+<h2>1. Introduction</h2>
+<p>La ponctualité est l'indicateur central de tout exploitant de transport. Un retard n'est jamais isolé : le véhicule
+est attendu ailleurs, et son retard peut se reporter sur ses services suivants — un phénomène observé lors de mon stage
+chez ALSA Agadir City (transport urbain par bus). Ce projet étudie ce mécanisme sur un cas où les données sont riches et
+officielles : les vols au départ d'Atlanta, l'aéroport le plus fréquenté du monde.</p>
+<div class="question">Problématique : quand et pourquoi les vols au départ d'Atlanta prennent-ils du retard pendant l'été 2022 ?</div>
+<ol>
+  <li>Quelle est l'ampleur des retards ?</li>
+  <li>Comment le retard évolue-t-il au fil de la journée et de la semaine ?</li>
+  <li>Quelles compagnies et quelles destinations sont les plus touchées ?</li>
+  <li>Le retard au départ se rattrape-t-il en vol ?</li>
+  <li>Un retard se transmet-il au vol suivant du même avion (effet domino) ?</li>
+</ol>
+<p>Un vol est dit <b>en retard</b> s'il part plus de 15 minutes après l'heure prévue (définition officielle du BTS, variable <code>DepDel15</code>).</p>
+
+<h2>2. Dataset et méthodologie</h2>
+<h3>Choix du dataset</h3>
+<p>Sept datasets Kaggle du domaine transport ont été comparés. Trois ont été écartés car ils comptent moins de 50 colonnes
+(US Accidents : 46, Chicago Traffic Crashes : 48, taxis/vélos : &lt; 25). Parmi les autres (Uber &amp; Lyft Boston, accidents en
+France et au Royaume-Uni), le dataset <b>Flight Status Prediction</b> a été retenu : données officielles du Bureau of
+Transportation Statistics (BTS), et surtout présence de l'<b>immatriculation de chaque avion</b>, qui permet de suivre un
+même appareil au fil de la journée.</p>
+<table>
+  <tr><th>Élément</th><th>Valeur</th></tr>
+  <tr><td>Fichier source</td><td><code>Combined_Flights_2022.parquet</code> — 4 078 318 vols, janvier à juillet 2022</td></tr>
+  <tr class="fort"><td>Périmètre d'étude</td><td>Tous les départs d'Atlanta (ATL), juin et juillet 2022 : <b>54 461 vols × 61 colonnes</b></td></tr>
+  <tr><td>Types de variables</td><td>41 numériques, 17 catégorielles, 2 booléennes, 1 date</td></tr>
+  <tr><td>Richesse</td><td>14 compagnies, 147 destinations, 3 297 avions, 61 jours</td></tr>
+</table>
+<p>Le périmètre est un <b>choix de sujet</b>, pas un échantillonnage : juin–juillet est le pic des retards de l'année
+(≈ 26 % à Atlanta contre ≈ 15 % en janvier-février), et juillet seul (27 533 vols) était sous le minimum de 30 000 lignes.</p>
+
+<h3>Qualité des données et nettoyage</h3>
+<table>
+  <tr><th>Contrôle</th><th>Constat</th><th>Décision</th></tr>
+  <tr><td>Doublons</td><td>0</td><td>—</td></tr>
+  <tr><td>Valeurs manquantes</td><td>17 colonnes, ≈ 2 % des vols : toutes liées aux 1 009 vols annulés et 123 vols déviés</td><td>Gardées, non remplies (un vol annulé n'a pas de retard mesurable)</td></tr>
+  <tr><td>Valeurs aberrantes</td><td>≈ 12 % des vols au-delà de Q3 + 1,5 × IQR (44,5 min), maximum 41 h</td><td>Gardées : ce sont de vrais retards ; indicateurs robustes utilisés (médiane, %)</td></tr>
+  <tr><td>Colonnes constantes</td><td>10 colonnes (ville, État, code de l'aéroport de départ…)</td><td>Supprimées : aucune information</td></tr>
+  <tr><td>Nouvelles colonnes</td><td>Heure prévue, jour, statut, compagnie (petites compagnies regroupées), minutes rattrapées</td><td>Ajoutées (8 au total)</td></tr>
+</table>
+<p><b>Indicateur de l'effet domino.</b> Les vols sont triés par avion, par jour puis par heure ; pour chaque départ,
+<code>groupby(...).shift(1)</code> récupère le statut du départ précédent du même avion le même jour
+(colonne <code>vol_precedent_en_retard</code>).</p>
+
+<h3>Échantillonnage</h3>
+<p>Les nuages de points à 54 000 points sont illisibles et lents dans un dashboard : un échantillon représentatif de
+≈ 5 000 vols (10 %) est nécessaire. Cinq méthodes ont été comparées à la population, sur un tirage puis sur
+<b>100 tirages</b> chacune (<code>random_state</code> fixé pour la reproductibilité).</p>
+<div class="grille">
+  <table>
+    <tr><th>Méthode</th><th>% retard</th><th>Écart-type (100 tirages)</th></tr>
+    <tr><td><i>Population</i></td><td><i>26,2 %</i></td><td>—</td></tr>
+    <tr><td>Aléatoire simple</td><td>25,8 %</td><td>0,55 pt</td></tr>
+    <tr><td>Systématique (1 vol sur ~11)</td><td>26,6 %</td><td>0,53 pt</td></tr>
+    <tr><td>Stratifié par compagnie</td><td>25,7 %</td><td>0,60 pt</td></tr>
+    <tr><td>Par grappes (6 jours)</td><td>26,3 %</td><td><b style="color:var(--orange)">3,92 pts</b></td></tr>
+    <tr class="fort"><td>Stratifié par jour (retenu)</td><td>26,5 %</td><td>0,52 pt</td></tr>
+  </table>
+  <figure><img src="figures/09_stabilite_echantillonnage.png" alt="Stabilité des méthodes d'échantillonnage">
+    <figcaption>Figure 1 — Sur 100 tirages, les grappes de jours varient de 18 % à 36 %.</figcaption></figure>
+</div>
+<p>Un seul tirage par grappes semblait correct (26,3 %), mais la répétition révèle son instabilité : les retards dépendent
+fortement du jour (de 10 % à 63 %). L'échantillon <b>stratifié par jour</b> est retenu pour les nuages de points ;
+tous les pourcentages restent calculés sur les 54 461 vols.</p>
+
+<h2>3. Analyse</h2>
+<div class="chiffres">
+  <div class="chiffre"><b>54 461</b><span>vols étudiés</span></div>
+  <div class="chiffre o"><b>26 %</b><span>partent avec plus de 15 min de retard</span></div>
+  <div class="chiffre"><b>0 / 16 min</b><span>retard médian / moyen</span></div>
+  <div class="chiffre o"><b>× 2,1</b><span>risque de retard si le vol précédent était en retard</span></div>
+</div>
+
+<h3>3.1 Analyse univariée — que se passe-t-il ?</h3>
+<div class="grille">
+  <figure><img src="figures/10_distribution_retard.png" alt="Distribution du retard au départ">
+    <figcaption>Figure 2 — Distribution très asymétrique : 49 % des vols partent en avance, 8,4 % ont plus d'1 h de retard.</figcaption></figure>
+  <figure><img src="figures/10_compagnies.png" alt="Part des compagnies">
+    <figcaption>Figure 3 — Delta opère 66 % des vols (Atlanta est sa base principale).</figcaption></figure>
+</div>
+<p>Le retard est <b>fréquent</b> (plus d'un vol sur quatre) mais très inégal : la médiane est de 0 minute alors que la
+moyenne atteint 16 minutes, tirée par une minorité de très gros retards. D'où le choix du <b>% de vols en retard</b>
+comme indicateur principal. La domination de Delta doit être gardée en tête : le taux global d'Atlanta est surtout le sien.</p>
+
+<h3>3.2 Analyse bivariée — quand, chez qui, quels facteurs ?</h3>
+<div class="grille">
+  <figure><img src="figures/11_retard_par_heure.png" alt="Retard par heure">
+    <figcaption>Figure 4 — De ≈ 12 % à 5-6 h à ≈ 40 % à 20 h.</figcaption></figure>
+  <figure><img src="figures/11_effet_domino.png" alt="Effet domino">
+    <figcaption>Figure 5 — 50 % de retard si le vol précédent du même avion était en retard, contre 24 %.</figcaption></figure>
+  <figure><img src="figures/11_retard_par_compagnie.png" alt="Retard par compagnie">
+    <figcaption>Figure 6 — Southwest (37 %) et Frontier (35 %) contre Endeavor (18 %).</figcaption></figure>
+  <figure><img src="figures/11_depart_vs_arrivee.png" alt="Retard départ vs arrivée">
+    <figcaption>Figure 7 — Corrélation départ/arrivée 0,98 : le retard se conserve (échantillon stratifié).</figcaption></figure>
+</div>
+<p>Le retard <b>s'accumule au fil de la journée</b> : un vol du soir a environ trois fois plus de risque d'être en retard
+qu'un vol du matin. La mesure directe de l'effet domino le confirme : quand le départ précédent d'un avion était en retard,
+son départ suivant l'est <b>une fois sur deux</b>. Le retard se joue au sol, avant le décollage : il se retrouve presque
+entièrement à l'arrivée (seuls 20 % des vols partis en retard arrivent à l'heure, avec ≈ 7 minutes regagnées en vol en
+médiane) et n'a <b>aucun lien avec la distance</b> (corrélation 0,01). Le jour de la semaine compte moins que l'heure
+(de 23 % le mardi à 29 % le jeudi). Ces relations sont des <b>associations</b>, pas des preuves de causalité.</p>
+
+<h3>3.3 Analyse multivariée — quels profils sont à risque ?</h3>
+<div class="grille">
+  <figure><img src="figures/12_domino_par_heure.png" alt="Effet domino par heure">
+    <figcaption>Figure 8 — L'écart domino persiste à chaque heure (heures ≥ 200 vols).</figcaption></figure>
+  <figure><img src="figures/12_compagnie_heure.png" alt="Compagnie par heure">
+    <figcaption>Figure 9 — Même tendance jusqu'à 16 h, puis Southwest s'effondre (≈ 80 % à 21 h).</figcaption></figure>
+</div>
+<figure><img src="figures/12_heatmap_jour_heure.png" alt="Carte jour × heure" style="width:82%; max-height:none; margin:0 auto;">
+  <figcaption>Figure 10 — % de vols en retard par jour et par heure : le soir est à risque tous les jours, le mardi reste le plus calme.</figcaption></figure>
+<p>En croisant trois variables, l'effet domino <b>résiste à l'heure de départ</b> : à heure égale, un vol dont le
+précédent était en retard a environ deux fois plus de risque de repartir en retard. L'effet domino n'est donc pas qu'un
+effet « fin de journée ». La comparaison par compagnie montre que le mauvais score de Southwest vient surtout de ses
+<b>vols du soir</b>. Enfin, les destinations les plus touchées sont Orlando (38 %), New York JFK (37 %), Tampa (35 %) :
+la Floride revient plusieurs fois (hypothèse : orages d'été, non vérifiable sans données météo).</p>
+
+<h2>4. Dashboard interactif</h2>
+<figure><img src="captures/03_effet_domino.png" alt="Capture du dashboard" style="width:78%; max-height:none; margin:0 auto;">
+  <figcaption>Figure 11 — Onglet « Effet domino » du dashboard Streamlit.</figcaption></figure>
+<p>Le dashboard (Streamlit + Plotly) est pensé comme un outil d'analyse compréhensible sans explication préalable :</p>
+<ul>
+  <li><b>Filtres liés</b> (barre latérale) : période, compagnies, plage horaire, jours de la semaine — tous les indicateurs et graphiques se recalculent.</li>
+  <li><b>5 KPI</b> : vols sélectionnés, % en retard (avec l'écart à l'ensemble), durée moyenne d'un retard, % annulés, effet domino (× combien).</li>
+  <li><b>5 onglets</b> suivant l'histoire : vue générale (heure, jour, jour par jour, carte jour × heure) · effet domino · comparaison de deux compagnies · destinations · insights et limites.</li>
+  <li><b>Interactions</b> : infobulles détaillées, zoom, sélection des compagnies à comparer, seuil minimal de vols par destination.</li>
+  <li><b>Garde-fous</b> : les pourcentages calculés sur trop peu de vols sont masqués et signalés, pour ne jamais afficher un résultat trompeur.</li>
+</ul>
+<p class="petit">Identité visuelle commune au notebook, aux slides et au dashboard : bleu pour les vols en général, orange pour
+le retard et ce qui est mis en avant ; palette vérifiée pour les personnes daltoniennes ; titres qui énoncent la conclusion du graphique.</p>
+
+<h2>5. Insights</h2>
+<div class="encadre">
+  <div class="insight"><b>1. Le retard est fréquent.</b> 26 % des vols partent avec plus de 15 min de retard ; 8 % avec plus d'une heure.</div>
+  <div class="insight"><b>2. Il grandit au fil de la journée.</b> ≈ 12 % à 6 h contre ≈ 40 % à 20 h, tous les jours de la semaine.</div>
+  <div class="insight"><b>3. L'effet domino est mesurable.</b> 50 % de retard si le vol précédent du même avion était en retard, contre 24 %, à chaque heure.</div>
+  <div class="insight"><b>4. Le retard se joue au départ.</b> Corrélation départ/arrivée 0,98 ; la distance ne joue aucun rôle.</div>
+  <div class="insight"><b>5. Les compagnies ne se valent pas.</b> Southwest et Frontier sont deux fois plus souvent en retard qu'Endeavor.</div>
+  <div class="insight" style="margin:0"><b>6. Certains jours font exploser les retards.</b> De 10 % à 63 % de vols en retard selon le jour.</div>
+</div>
+
+<h2>6. Limites</h2>
+<ul>
+  <li><b>Représentativité</b> : un seul aéroport et deux mois d'été ; les résultats ne se généralisent pas automatiquement à l'hiver ni à d'autres aéroports.</li>
+  <li><b>Variables absentes</b> : pas de météo, pas de causes officielles de retard dans ce fichier (elles existent dans les fichiers bruts mensuels), pas de nombre de passagers.</li>
+  <li><b>Effet domino partiel</b> : seuls les départs d'Atlanta sont observés ; le vol retour vers Atlanta entre deux départs n'est pas dans le périmètre.</li>
+  <li><b>Déséquilibre</b> : Delta représente 66 % des vols ; les petites compagnies, regroupées en « Autres », ont des pourcentages moins fiables.</li>
+  <li><b>Causalité</b> : toutes les relations sont des associations. Deux vols d'un même avion partagent la même journée (météo, affluence) ; l'effet domino est plausible et reconnu par le BTS (« Aircraft Arriving Late »), mais ces données seules ne le prouvent pas.</li>
+</ul>
+
+<h2>7. Conclusion</h2>
+<p>À Atlanta pendant l'été 2022, les vols prennent surtout du retard <b>en fin de journée</b>, parce que les retards
+<b>se transmettent d'un vol à l'autre du même avion</b>. Ce mécanisme touche toutes les compagnies, mais certaines y sont
+nettement plus exposées, et quelques jours exceptionnels aggravent fortement la situation. Le levier le plus efficace
+serait donc de <b>protéger les premières rotations de la journée</b> (marges au sol, avions de réserve). Avec plus de
+données, on ajouterait la météo horaire, les causes officielles de retard et une année complète pour comparer les saisons.
+Le même raisonnement s'applique directement à la ponctualité d'un réseau de bus.</p>
+<p class="petit">Code, notebook et dashboard : dossier du projet (<code>notebooks/analysis.ipynb</code>, <code>src/</code>, <code>dashboard/app.py</code>).
+Données : BTS via Kaggle « Flight Status Prediction » (robikscube).</p>
+
+</body>
+</html>
