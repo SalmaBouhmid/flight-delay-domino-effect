@@ -222,6 +222,25 @@ Plan du cahier des charges : introduction · dataset et méthodologie · analyse
 
 ---
 
+## Compléments après comparaison avec un autre cahier des charges (26/09)
+
+Comparaison avec le cahier des charges d'un·e camarade du module ; ajouts retenus selon trois niveaux de priorité
+(on reste au niveau Bac+2, sans complexité inutile) :
+
+| Ajout | Où |
+|---|---|
+| 2 méthodes d'échantillonnage de plus : **stratifié non proportionnel** et **bootstrap** (7 au total) | `src/sampling.py`, notebook section 8 |
+| Analyse de chaque échantillon : doublons, manquants, retards extrêmes, jours couverts | `indicateurs()`, notebook 9.1 |
+| **Erreurs absolue et relative**, **score de représentativité**, **classement** sur 100 tirages | notebook 9.2-9.3, rapport, slide 5 |
+| Repondération du stratifié non proportionnel (25,8 % → 26,1 %, population 26,2 %) | notebook 9.4 |
+| **43 tests automatiques** (`pytest`) | `tests/` |
+| Onglets **Échantillonnage** (méthode, taille, graine au choix, comparaison en direct, classement) et **Qualité des données** | dashboard |
+
+Non retenus (volontairement) : tests de Kolmogorov-Smirnov et du khi-deux, intervalles de confiance (plus avancés, à
+expliquer à l'oral) ; réorganisation complète du projet en pages multiples (beaucoup de risque avant le rendu, peu de gain).
+
+---
+
 ## Ce qui reste à faire
 
 - [ ] Relire le notebook, le rapport et les deux présentations ; poser toutes les questions

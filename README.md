@@ -57,7 +57,8 @@ Projet final du module *Visualisation des Données* (Bac+2 Ingénierie des Donn�
 2. **Exploration et qualité** : 0 doublon ; les valeurs manquantes correspondent toutes aux vols annulés/déviés ;
    les retards extrêmes sont de vrais retards et sont gardés.
 3. **Nettoyage documenté** : suppression de 10 colonnes constantes, ajout de 8 colonnes utiles (heure, statut, effet domino…).
-4. **Échantillonnage** : 5 méthodes comparées (aléatoire, systématique, stratifiée ×2, par grappes), répétées 100 fois.
+4. **Échantillonnage** : 7 méthodes (aléatoire, systématique, stratifié proportionnel ×2, stratifié non proportionnel,
+   par grappes, bootstrap), erreurs absolue et relative, score de représentativité et classement sur 100 tirages.
 5. **Analyses** univariées, bivariées et multivariées, chacune répondant à une sous-question.
 6. **Dashboard Streamlit** avec filtres (période, compagnie, heure, jour) et graphiques Plotly interactifs.
 
@@ -78,7 +79,15 @@ ne sont pas observés ; Delta représente 66 % des vols. Détail : notebook, sec
 
 ## Technologies
 
-Python · Pandas · NumPy · Matplotlib · Seaborn · Plotly · Streamlit · Jupyter
+Python · Pandas · NumPy · Matplotlib · Seaborn · Plotly · Streamlit · Jupyter · pytest
+
+## Tests
+
+43 tests automatiques (`tests/`) : nettoyage, 7 méthodes d'échantillonnage, calculs, démarrage du dashboard et filtres.
+
+```bash
+python -m pytest
+```
 
 ## Structure du projet
 
@@ -92,10 +101,11 @@ dataviz-retards-vols/
 ├── src/
 │   ├── data_loading.py      # extraction du périmètre
 │   ├── preprocessing.py     # nettoyage + colonnes ajoutées
-│   ├── sampling.py          # 5 méthodes d'échantillonnage + comparaison
+│   ├── sampling.py          # 7 méthodes d'échantillonnage, erreurs, score, classement
 │   ├── analysis.py          # calculs (taux de retard, tableaux croisés, KPI)
 │   └── visualizations.py    # style visuel commun
 ├── dashboard/               # dashboard Streamlit (app.py + requirements pour le déploiement)
+├── tests/                   # 43 tests automatiques (pytest)
 ├── reports/                 # rapport PDF (+ source HTML), figures, captures du dashboard
 ├── presentation/            # présentation finale + rendu d'étape 1
 └── requirements.txt

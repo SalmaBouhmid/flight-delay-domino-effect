@@ -59,13 +59,30 @@ Tableau coloré : plus la case est foncée, plus la valeur est grande. On l'util
 |---|---|---|---|
 | **Aléatoire simple** | Tirer 5 000 vols au hasard | Simple, sans biais | Peut, par hasard, oublier un petit groupe |
 | **Systématique** | Trier par date, prendre 1 vol sur 11 | Couvre toute la période régulièrement | Problème si les données ont un cycle de même pas |
-| **Stratifié** | Même % dans chaque groupe (compagnie, ou jour) | Chaque groupe bien représenté | Il faut connaître les groupes à l'avance |
+| **Stratifié proportionnel** | Même **%** dans chaque groupe (compagnie) | Chaque groupe à sa vraie part (Delta 66 %) | Il faut connaître les groupes à l'avance |
+| **Stratifié non proportionnel** | Même **nombre** de vols (625) dans chaque compagnie | Assez de vols pour étudier les petites compagnies | **Biaisé** pour décrire la population (Delta 12,5 %) → il faut **repondérer** |
 | **Par grappes** | Tirer des jours entiers | Pratique pour collecter | **Instable** si les grappes sont différentes entre elles |
 | **Stratifié temporel** | Même % dans chacun des 61 jours | Tous les jours présents | — |
+| **Bootstrap** | Tirer 5 000 vols au hasard **avec remise** | Base du ré-échantillonnage (mesurer la variabilité) | Contient des doublons (un vol tiré plusieurs fois) |
+
+**Comment je mesure la représentativité** (à savoir expliquer) :
+- **Erreur absolue** = |valeur de l'échantillon − valeur de la population|. Ex. : 26,51 % − 26,25 % = 0,26 point.
+- **Erreur relative** = erreur absolue / valeur de la population × 100. Ex. : 0,26 / 26,25 × 100 = 1 %.
+  Elle permet de comparer des indicateurs d'unités différentes (minutes, %).
+- **Score de représentativité** = 100 − moyenne des erreurs relatives sur 6 indicateurs. 100 = identique à la population.
+- Le **retard médian** n'est pas dans le score : il vaut 0 dans la population, et on ne peut pas diviser par 0.
+- Petit piège : le **% d'annulés** (1,9 %) a souvent la plus grosse erreur relative, car un petit écart sur un petit
+  pourcentage donne une grande erreur relative.
+
+**Classement (score moyen sur 100 tirages)** : systématique 96,7 · stratifié compagnie 96,1 · **stratifié par jour 96,0
+(retenu)** · aléatoire 95,8 · bootstrap 95,7 · grappes 84,8 · non proportionnel 71,8.
 
 **Mon résultat clé :** en répétant 100 fois chaque tirage, les grappes donnent de 18 % à 36 % de retard,
 les autres méthodes restent à 26 % ± 1. **Pourquoi ?** Parce que les jours sont très différents (10 % à 63 % de retard) :
 6 jours tirés au hasard peuvent tomber sur des jours d'orage.
+
+**Repondération** : dans le non proportionnel, chaque vol reçoit un poids = (vols de sa compagnie dans la population) /
+(vols de sa compagnie dans l'échantillon). Sur 100 tirages : 25,8 % sans poids (biais), 26,1 % avec poids (population 26,2 %).
 
 **`random_state = 42`** : fixe le hasard pour obtenir le même tirage à chaque exécution (**reproductibilité**).
 
@@ -98,7 +115,9 @@ et **streamlit** (dashboard).
 
 ### `src/sampling.py` — échantillonner
 - `vols.sample(n=5000, random_state=42)` : tirage aléatoire simple.
-- `vols.groupby("compagnie").sample(frac=0.09)` : tirage stratifié (9 % dans chaque compagnie).
+- `vols.groupby("compagnie").sample(frac=0.09)` : tirage stratifié proportionnel (9 % dans chaque compagnie).
+- `groupe.sample(n=625)` pour chaque compagnie : stratifié non proportionnel (même nombre partout).
+- `vols.sample(n=5000, replace=True)` : bootstrap (`replace=True` = avec remise, doublons possibles).
 - `.iloc[positions]` : sélectionne des lignes par leur position (systématique).
 - `vols[vols["FlightDate"].isin(jours_tires)]` : garde les vols des jours tirés (grappes).
 
@@ -161,9 +180,23 @@ Ce sont de vrais vols très en retard, pas des erreurs de saisie. Les supprimer 
 J'utilise des indicateurs robustes (médiane, % en retard) pour qu'ils ne déforment pas l'analyse.
 
 **Pourquoi ce type d'échantillonnage ? Votre échantillon est-il représentatif ?**
-J'ai comparé 5 méthodes à la population, sur un tirage puis sur 100 tirages. J'ai retenu le stratifié par jour :
-% de retard 26,5 % contre 26,2 % dans la population, part de Delta 67 % contre 66 %, les 61 jours présents.
-Les grappes sont instables (18-36 %) car les jours sont très différents.
+J'ai comparé 7 méthodes à la population avec l'erreur absolue, l'erreur relative et un score de représentativité,
+sur un tirage puis sur 100 tirages. J'ai retenu le stratifié par jour : score moyen 96,0 (groupe de tête), % de retard
+26,5 % contre 26,2 % dans la population, part de Delta 67 % contre 66 %, les 61 jours présents.
+Les grappes sont instables (18-36 %) car les jours sont très différents ; le non proportionnel est biaisé par construction.
+
+**Pourquoi le systématique est premier et vous ne l'avez pas choisi ?**
+L'écart est très faible (96,7 contre 96,0). J'ai préféré le stratifié par jour car il **garantit** que chacun des 61 jours
+est représenté, et il a l'écart-type le plus faible du % de retard (0,52 point). Les deux choix sont défendables.
+
+**Pourquoi le bootstrap a des doublons ?**
+Parce qu'il tire **avec remise** : un vol tiré peut être tiré à nouveau. Sur 5 000 tirages parmi 54 461 vols, environ
+230 vols sortent deux fois. C'est normal et voulu.
+
+**Comment avez-vous testé le code ?**
+43 tests automatiques avec `pytest` (dossier `tests/`) : taille des échantillons, proportions stratifiées conservées,
+doublons du bootstrap, grappes complètes, pourcentages entre 0 et 100, fichier brut jamais modifié, démarrage du dashboard,
+filtres qui changent réellement les résultats. Commande : `python -m pytest`.
 
 **Pourquoi un scatter plot ici ?**
 Pour montrer la relation entre deux variables numériques (retard au départ et à l'arrivée). J'utilise l'échantillon
@@ -212,3 +245,5 @@ comparer les saisons, et les vols arrivant à Atlanta pour suivre la chaîne com
 | **37 % / 18 %** | Southwest / Endeavor |
 | **10 % → 63 %** | Jour le plus calme → le pire (21 juillet) |
 | **66 %** | Part de Delta dans les vols |
+| **7** méthodes · **96,0** | Méthodes d'échantillonnage · score de l'échantillon retenu (stratifié par jour) |
+| **43** | Tests automatiques qui passent |
