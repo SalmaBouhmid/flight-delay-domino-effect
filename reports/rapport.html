@@ -94,24 +94,31 @@ même appareil au fil de la journée.</p>
 
 <h3>Échantillonnage</h3>
 <p>Les nuages de points à 54 000 points sont illisibles et lents dans un dashboard : un échantillon représentatif de
-≈ 5 000 vols (10 %) est nécessaire. Cinq méthodes ont été comparées à la population, sur un tirage puis sur
-<b>100 tirages</b> chacune (<code>random_state</code> fixé pour la reproductibilité).</p>
+≈ 5 000 vols (10 %) est nécessaire. <b>Sept méthodes</b> ont été comparées : aléatoire simple, systématique, stratifié
+proportionnel (par compagnie, par jour), stratifié non proportionnel (625 vols par compagnie), par grappes (jours entiers)
+et bootstrap (avec remise), toutes avec une graine fixe. Pour chaque échantillon : taille, doublons, manquants,
+statistiques du retard, retards extrêmes, parts des catégories. On calcule sur 6 indicateurs l'<b>erreur absolue</b>
+et l'<b>erreur relative</b> par rapport à la population, puis un <b>score de représentativité</b>
+(100 − moyenne des erreurs relatives), sur <b>100 tirages</b> par méthode.</p>
 <div class="grille">
   <table>
-    <tr><th>Méthode</th><th>% retard</th><th>Écart-type (100 tirages)</th></tr>
-    <tr><td><i>Population</i></td><td><i>26,2 %</i></td><td>—</td></tr>
-    <tr><td>Aléatoire simple</td><td>25,8 %</td><td>0,55 pt</td></tr>
-    <tr><td>Systématique (1 vol sur ~11)</td><td>26,6 %</td><td>0,53 pt</td></tr>
-    <tr><td>Stratifié par compagnie</td><td>25,7 %</td><td>0,60 pt</td></tr>
-    <tr><td>Par grappes (6 jours)</td><td>26,3 %</td><td><b style="color:var(--orange)">3,92 pts</b></td></tr>
-    <tr class="fort"><td>Stratifié par jour (retenu)</td><td>26,5 %</td><td>0,52 pt</td></tr>
+    <tr><th>Rang</th><th>Méthode</th><th>Score moyen</th><th>Écart-type du % retard</th></tr>
+    <tr><td>1</td><td>Systématique</td><td>96,7</td><td>0,53 pt</td></tr>
+    <tr><td>2</td><td>Stratifié (compagnie)</td><td>96,1</td><td>0,60 pt</td></tr>
+    <tr class="fort"><td>3</td><td>Stratifié par jour (retenu)</td><td>96,0</td><td>0,52 pt</td></tr>
+    <tr><td>4</td><td>Aléatoire simple</td><td>95,8</td><td>0,55 pt</td></tr>
+    <tr><td>5</td><td>Bootstrap</td><td>95,7</td><td>0,67 pt</td></tr>
+    <tr><td>6</td><td>Par grappes (6 jours)</td><td>84,8</td><td><b style="color:var(--orange)">3,92 pts</b></td></tr>
+    <tr><td>7</td><td>Stratifié non proportionnel</td><td><b style="color:var(--orange)">71,8</b></td><td>0,45 pt</td></tr>
   </table>
   <figure><img src="figures/09_stabilite_echantillonnage.png" alt="Stabilité des méthodes d'échantillonnage">
-    <figcaption>Figure 1 — Sur 100 tirages, les grappes de jours varient de 18 % à 36 %.</figcaption></figure>
+    <figcaption>Figure 1 — Sur 100 tirages, les grappes de jours varient de 18 % à 36 % de retard.</figcaption></figure>
 </div>
-<p>Un seul tirage par grappes semblait correct (26,3 %), mais la répétition révèle son instabilité : les retards dépendent
-fortement du jour (de 10 % à 63 %). L'échantillon <b>stratifié par jour</b> est retenu pour les nuages de points ;
-tous les pourcentages restent calculés sur les 54 461 vols.</p>
+<p>Les grappes sont instables car les retards dépendent fortement du jour (de 10 % à 63 %). Le stratifié non
+proportionnel est biaisé par construction (Delta passe de 66 % à 12,5 %) : sur 100 tirages il sous-estime le retard
+(25,8 %), mais <b>repondéré</b> il retrouve 26,1 % (population : 26,2 %). L'échantillon <b>stratifié par jour</b>
+est retenu : dans le groupe de tête, écart-type le plus faible, et les 61 jours représentés. Tous les pourcentages
+restent calculés sur les 54 461 vols.</p>
 
 <h2>3. Analyse</h2>
 <div class="chiffres">
@@ -172,7 +179,7 @@ la Floride revient plusieurs fois (hypothèse : orages d'été, non vérifiable 
 <ul>
   <li><b>Filtres liés</b> (barre latérale) : période, compagnies, plage horaire, jours de la semaine — tous les indicateurs et graphiques se recalculent.</li>
   <li><b>5 KPI</b> : vols sélectionnés, % en retard (avec l'écart à l'ensemble), durée moyenne d'un retard, % annulés, effet domino (× combien).</li>
-  <li><b>5 onglets</b> suivant l'histoire : vue générale (heure, jour, jour par jour, carte jour × heure) · effet domino · comparaison de deux compagnies · destinations · insights et limites.</li>
+  <li><b>7 onglets</b> : vue générale (heure, jour, jour par jour, carte jour × heure) · effet domino · comparaison de deux compagnies · destinations · <b>laboratoire d'échantillonnage</b> (méthode, taille et graine au choix, erreurs et score calculés en direct, classement des méthodes) · <b>qualité des données</b> (manquants, doublons, valeurs aberrantes, colonnes constantes) · insights et limites.</li>
   <li><b>Interactions</b> : infobulles détaillées, zoom, sélection des compagnies à comparer, seuil minimal de vols par destination.</li>
   <li><b>Garde-fous</b> : les pourcentages calculés sur trop peu de vols sont masqués et signalés, pour ne jamais afficher un résultat trompeur.</li>
 </ul>
@@ -205,7 +212,7 @@ nettement plus exposées, et quelques jours exceptionnels aggravent fortement la
 serait donc de <b>protéger les premières rotations de la journée</b> (marges au sol, avions de réserve). Avec plus de
 données, on ajouterait la météo horaire, les causes officielles de retard et une année complète pour comparer les saisons.
 Le même raisonnement s'applique directement à la ponctualité d'un réseau de bus.</p>
-<p class="petit">Code, notebook et dashboard : dossier du projet (<code>notebooks/analysis.ipynb</code>, <code>src/</code>, <code>dashboard/app.py</code>).
+<p class="petit">Code, notebook, dashboard et 43 tests automatiques (<code>pytest</code>) : <code>github.com/SalmaBouhmid/flight-delay-domino-effect</code>.
 Données : BTS via Kaggle « Flight Status Prediction » (robikscube).</p>
 
 </body>
