@@ -1,5 +1,7 @@
-pandas==2.3.3
-numpy==2.3.5
-matplotlib==3.10.6
-plotly==6.3.0
-streamlit==1.51.0
+# Dépendances du dashboard (utilisées par Streamlit Community Cloud).
+# Versions minimales plutôt qu'exactes : le serveur installe les versions compatibles avec son Python.
+streamlit>=1.40
+pandas>=2.2
+numpy>=1.26
+plotly>=5.20
+matplotlib>=3.8
