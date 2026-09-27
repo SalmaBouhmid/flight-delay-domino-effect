@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>شرح المشروع بالعربية — أثر الدومينو في تأخر الرحلات</title>
+<style>
+  @page { size: A4; margin: 15mm 15mm 16mm 15mm; }
+  :root { --navy:#14213d; --bleu:#2a78d6; --orange:#eb6834; --texte:#1f2937; --gris:#6b7280; --teinte:#eef3fa; --teinte-o:#fdeee7; --ligne:#e1e0d9; }
+  body { font-family: "Segoe UI", "Arial", "Tahoma", sans-serif; color: var(--texte); font-size: 11.5pt; line-height: 1.75; margin: 0; background: #fff; }
+  h1 { font-size: 22pt; color: var(--navy); margin: 0 0 2mm; line-height: 1.3; }
+  h2 { font-size: 15pt; color: var(--navy); margin: 7mm 0 2mm; padding-bottom: 1mm; border-bottom: 1px solid var(--ligne); break-after: avoid; }
+  h3 { font-size: 12.5pt; color: var(--navy); margin: 4mm 0 1mm; break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 2.5mm; padding-right: 6mm; padding-left: 0; }
+  li { margin-bottom: 1mm; }
+  .fr { direction: ltr; unicode-bidi: isolate; font-style: italic; color: var(--gris); }
+  code, .code { direction: ltr; unicode-bidi: isolate; font-family: Consolas, monospace; font-size: 10pt; background: #f3f4f6; padding: 0 1.5mm; border-radius: 1mm; }
+  .sous-titre { color: var(--gris); font-size: 12pt; }
+  .encadre { background: var(--teinte); border-radius: 2mm; padding: 3mm 4mm; margin: 2.5mm 0 3mm; break-inside: avoid; }
+  .encadre.o { background: var(--teinte-o); }
+  .grand { font-size: 13pt; font-weight: 700; color: var(--navy); }
+  table { border-collapse: collapse; width: 100%; font-size: 10.5pt; margin: 2mm 0 3.5mm; break-inside: avoid; }
+  th { background: var(--navy); color: #fff; text-align: right; padding: 1.5mm 2.5mm; font-weight: 600; }
+  td { border-bottom: 1px solid var(--ligne); padding: 1.3mm 2.5mm; vertical-align: top; }
+  tr.fort td { background: var(--teinte-o); font-weight: 600; }
+  .q { font-weight: 700; color: var(--navy); margin-top: 3mm; }
+  .r { margin: 0 0 2mm; }
+  .dire { direction: ltr; unicode-bidi: isolate; display: block; text-align: left; background: #f7f7f5; border-left: 3px solid var(--bleu); padding: 1.5mm 3mm; margin: 1mm 0 2.5mm; font-size: 10.5pt; }
+  .num { direction: ltr; unicode-bidi: isolate; font-weight: 700; color: var(--orange); }
+  .saut { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>شرح المشروع بالعربية</h1>
+<div class="sous-titre">أثر الدومينو في تأخر الرحلات <span class="fr">(L'effet domino des retards)</span> — رحلات مطار أتلانتا، صيف 2022</div>
+<p style="color:var(--gris);font-size:10pt;margin-top:1mm">ملف مراجعة شخصي — سلمى بوحميد — مشروع مادة تصوير البيانات <span class="fr">(Visualisation des données)</span></p>
+
+<div class="encadre o">
+  <div class="grand">المشروع في جملة واحدة</div>
+  حلّلتُ <span class="num">54 461</span> رحلة انطلقت من مطار أتلانتا (أكثر مطار ازدحاماً في العالم) خلال يونيو ويوليو 2022،
+  فاكتشفتُ أن التأخر <b>يكبر مع مرور اليوم</b>، لأن تأخر رحلة ينتقل إلى الرحلة الموالية لنفس الطائرة — وهذا ما نسميه
+  <b>أثر الدومينو</b>. ثم صنعتُ لوحة قيادة تفاعلية <span class="fr">(dashboard)</span> لاستكشاف هذه النتائج.
+</div>
+
+<h2>1. المشكلة التي ندرسها <span class="fr">(la problématique)</span></h2>
+<p>الانضباط في المواعيد <span class="fr">(la ponctualité)</span> هو أهم مؤشر لأي شركة نقل. والتأخر لا يبقى معزولاً:
+الطائرة (أو الحافلة) منتظَرة في مكان آخر، فتأخرها ينتقل إلى رحلاتها التالية. لاحظتُ نفس الظاهرة في تدريبي بشركة
+<b>ALSA أكادير</b> للنقل الحضري: حافلة متأخرة في رحلتها الأولى تؤخر كل الرحلات التي بعدها.</p>
+<div class="encadre">
+  <b>السؤال الرئيسي:</b> متى ولماذا تتأخر الرحلات المنطلقة من أتلانتا خلال صيف 2022؟
+  <span class="dire">Quand et pourquoi les vols au départ d'Atlanta prennent-ils du retard pendant l'été 2022 ?</span>
+</div>
+<ol>
+  <li>ما حجم التأخرات؟</li>
+  <li>كيف يتطور التأخر خلال اليوم وخلال الأسبوع؟</li>
+  <li>ما هي الشركات والوجهات الأكثر تأثراً؟</li>
+  <li>هل يُستدرَك التأخر أثناء الطيران؟</li>
+  <li>هل ينتقل التأخر من رحلة إلى الرحلة الموالية لنفس الطائرة؟ (أثر الدومينو)</li>
+</ol>
+<p><b>تعريف مهم:</b> نقول إن الرحلة «متأخرة» إذا أقلعت <b>بأكثر من 15 دقيقة</b> بعد موعدها — وهذا هو التعريف الرسمي
+للهيئة الأمريكية للإحصاءات BTS (العمود <code>DepDel15</code>).</p>
+
+<h2>2. البيانات <span class="fr">(le dataset)</span></h2>
+<table>
+  <tr><th>العنصر</th><th>التفاصيل</th></tr>
+  <tr><td>المصدر</td><td>موقع Kaggle، مجموعة <span class="fr">« Flight Status Prediction »</span></td></tr>
+  <tr><td>الأصل الرسمي</td><td>مكتب إحصاءات النقل الأمريكي <span class="fr">(Bureau of Transportation Statistics, BTS)</span> — بيانات حكومية حقيقية</td></tr>
+  <tr><td>الملف الأصلي</td><td>أكثر من <span class="num">4 ملايين</span> رحلة، من يناير إلى يوليو 2022</td></tr>
+  <tr class="fort"><td>نطاق الدراسة <span class="fr">(périmètre)</span></td><td>كل الرحلات المنطلقة من أتلانتا في يونيو ويوليو 2022: <span class="num">54 461</span> سطراً × <span class="num">61</span> عموداً</td></tr>
+  <tr><td>أنواع المتغيرات</td><td>41 رقمية، 17 فئوية (نصية)، 2 صح/خطأ، 1 تاريخ</td></tr>
+  <tr><td>الغنى</td><td>14 شركة طيران، 147 وجهة، 3 297 طائرة، 61 يوماً</td></tr>
+</table>
+<h3>لماذا اخترتُ هذه البيانات؟</h3>
+<ul>
+  <li>قارنتُ <b>7 مجموعات بيانات</b> في مجال النقل؛ ثلاث منها أقل من 50 عموداً فاستبعدتُها.</li>
+  <li>بيانات <b>رسمية وحقيقية</b>، وغنية (61 عموداً).</li>
+  <li>فيها <b>رقم تسجيل كل طائرة</b> <code>Tail_Number</code>، مما يسمح بتتبع نفس الطائرة خلال اليوم ← الزاوية الأصلية: أثر الدومينو.</li>
+  <li>يونيو ويوليو هما <b>ذروة التأخرات</b> في السنة (≈ 26 % مقابل ≈ 15 % في يناير-فبراير). ويوليو وحده = 27 533 رحلة فقط (أقل من 30 000 المطلوبة)، لذلك أخذتُ الشهرين.</li>
+</ul>
+<div class="encadre o"><b>انتبهي:</b> اختيار أتلانتا في يونيو ويوليو <b>ليس معاينة</b> <span class="fr">(pas un échantillonnage)</span>، بل هو
+<b>تحديد موضوع الدراسة</b>. المعاينة جاءت بعد ذلك، على هذه الـ 54 461 رحلة.</div>
+
+<h3>أهم الأعمدة</h3>
+<table>
+  <tr><th>العمود</th><th>المعنى</th></tr>
+  <tr><td><code>FlightDate</code></td><td>تاريخ الرحلة</td></tr>
+  <tr><td><code>Airline</code></td><td>شركة الطيران التي تشغّل الرحلة</td></tr>
+  <tr><td><code>Dest</code></td><td>مطار الوصول (مثلاً MCO = أورلاندو)</td></tr>
+  <tr><td><code>CRSDepTime</code></td><td>ساعة الإقلاع المبرمجة (1435 = 14:35)</td></tr>
+  <tr><td><code>DepDelay</code></td><td><b>التأخر عند الإقلاع بالدقائق</b> (سالب = أقلعت مبكراً) — المتغير الرئيسي</td></tr>
+  <tr><td><code>DepDel15</code></td><td>1 إذا كان التأخر أكثر من 15 دقيقة، وإلا 0</td></tr>
+  <tr><td><code>ArrDelay</code></td><td>التأخر عند الوصول بالدقائق</td></tr>
+  <tr><td><code>Tail_Number</code></td><td><b>رقم تسجيل الطائرة</b> — لتتبع نفس الطائرة</td></tr>
+  <tr><td><code>Distance</code></td><td>المسافة بالميل (1 ميل = 1,6 كلم)</td></tr>
+  <tr><td><code>Cancelled</code> / <code>Diverted</code></td><td>رحلة ملغاة / رحلة حُوِّلت إلى مطار آخر</td></tr>
+</table>
+
+<h2>3. ماذا فعلنا خطوة بخطوة</h2>
+<table>
+  <tr><th>المرحلة</th><th>ماذا فعلنا</th><th>لماذا</th></tr>
+  <tr><td>1. اختيار البيانات</td><td>مقارنة 7 مجموعات بيانات، واختيار رحلات الطيران</td><td>بيانات رسمية + زاوية أصلية (الطائرة نفسها)</td></tr>
+  <tr><td>2. الإشكالية</td><td>سؤال رئيسي + 5 أسئلة فرعية</td><td>كل رسم بياني يجيب عن سؤال</td></tr>
+  <tr><td>3. الاستكشاف والتنظيف</td><td>فحص الجودة وتنظيف البيانات (انظري الفقرة 4)</td><td>العمل على بيانات موثوقة</td></tr>
+  <tr><td>4. المعاينة</td><td>7 طرق، قياس الأخطاء، ترتيب الطرق (الفقرة 5)</td><td>عينة ممثِّلة لرسوم نقاط مقروءة</td></tr>
+  <tr><td>5-7. التحليلات</td><td>تحليل أحادي، ثنائي، ومتعدد المتغيرات (الفقرة 6)</td><td>الإجابة عن الأسئلة الفرعية</td></tr>
+  <tr><td>8. القصة والنتائج</td><td>6 نتائج رئيسية <span class="fr">(insights)</span> مبنية على الأرقام</td><td>رواية قصة واضحة بالبيانات</td></tr>
+  <tr><td>9-10. لوحة القيادة</td><td>Streamlit + Plotly، 7 تبويبات، فلاتر تفاعلية، مختبَرة</td><td>أداة يستعملها أي شخص لاستكشاف النتائج</td></tr>
+  <tr><td>11. التقرير</td><td>تقرير PDF من 6 صفحات</td><td>مطلوب في دفتر التحملات</td></tr>
+  <tr><td>12. العرض الشفهي</td><td>12 شريحة لـ 10 دقائق، النص في الملاحظات</td><td>التقديم أمام الأستاذ</td></tr>
+  <tr><td>13. النشر</td><td>GitHub عمومي + لوحة القيادة على الإنترنت + 43 اختباراً آلياً</td><td>ملف أعمال <span class="fr">(portfolio)</span> للتدريب والعمل</td></tr>
+</table>
+
+<h2>4. جودة البيانات وتنظيفها <span class="fr">(qualité et nettoyage)</span></h2>
+<table>
+  <tr><th>الفحص</th><th>النتيجة</th><th>القرار</th></tr>
+  <tr><td>الأسطر المكررة <span class="fr">(doublons)</span></td><td>0</td><td>لا شيء</td></tr>
+  <tr><td>القيم الناقصة <span class="fr">(valeurs manquantes)</span></td><td>≈ 2 % من الرحلات، في 17 عموداً</td><td><b>أبقيناها دون ملئها</b>: كلها رحلات ملغاة (1 009) أو محوَّلة (123). الرحلة الملغاة ليس لها تأخر، واختراع قيمة لا معنى له.</td></tr>
+  <tr><td>القيم الشاذة <span class="fr">(valeurs aberrantes)</span></td><td>≈ 12 % فوق حد IQR (44,5 دقيقة)، أقصاها 41 ساعة</td><td><b>أبقيناها</b>: إنها تأخرات حقيقية وليست أخطاء. واستعملنا مؤشرات لا تتأثر بها (الوسيط، النسبة المئوية).</td></tr>
+  <tr><td>الأعمدة الثابتة</td><td>10 أعمدة لها قيمة واحدة (مثلاً مدينة الإقلاع = أتلانتا دائماً)</td><td><b>حذفناها</b>: لا تحمل أي معلومة.</td></tr>
+  <tr><td>أعمدة جديدة</td><td>8 أعمدة (الساعة، اليوم، الحالة، الشركة، أثر الدومينو...)</td><td>للإجابة عن الأسئلة ولرسوم مقروءة</td></tr>
+</table>
+<p><b>قاعدة مهمة:</b> الملف الأصلي لا يُعدَّل أبداً؛ ننشئ نسخة منظَّفة في مجلد <code>data/processed</code>.</p>
+<h3>المتوسط والوسيط <span class="fr">(moyenne et médiane)</span> — سؤال محتمل جداً</h3>
+<p><b>المتوسط</b> = المجموع ÷ العدد، ويتأثر كثيراً بالقيم الكبيرة. <b>الوسيط</b> = القيمة التي في الوسط بعد الترتيب.
+عندنا: الوسيط = <span class="num">0</span> دقيقة، والمتوسط = <span class="num">16</span> دقيقة، لأن بعض الرحلات تأخرت ساعات طويلة
+فرفعت المتوسط. لذلك اخترنا <b>نسبة الرحلات المتأخرة</b> كمؤشر رئيسي.</p>
+<h3>كيف حسبنا أثر الدومينو؟</h3>
+<ol>
+  <li>رتّبنا الرحلات حسب <b>الطائرة</b>، ثم <b>اليوم</b>، ثم <b>الساعة</b>.</li>
+  <li>جمعناها في مجموعات «طائرة واحدة، يوم واحد» (<code>groupby</code>).</li>
+  <li>لكل رحلة، أخذنا حالة <b>الرحلة السابقة لنفس الطائرة</b> (<code>shift(1)</code>): هل كانت متأخرة أم لا.</li>
+</ol>
+
+<h2>5. المعاينة <span class="fr">(l'échantillonnage)</span></h2>
+<p><b>لماذا نحتاج عينة؟</b> لأن رسم 54 000 نقطة يعطي بقعة غير مقروءة وبطيئة في لوحة القيادة. عينة من 5 000 رحلة
+(10 %) <b>ممثِّلة</b> <span class="fr">(représentative)</span> تعطي نفس الصورة بوضوح. المجتمع الإحصائي <span class="fr">(population)</span> = الـ 54 461 رحلة.</p>
+<table>
+  <tr><th>الطريقة</th><th>المبدأ</th></tr>
+  <tr><td>عشوائية بسيطة <span class="fr">(aléatoire simple)</span></td><td>سحب 5 000 رحلة عشوائياً، لكل رحلة نفس الحظ</td></tr>
+  <tr><td>منتظمة <span class="fr">(systématique)</span></td><td>ترتيب الرحلات حسب التاريخ وأخذ رحلة كل ~11 رحلة</td></tr>
+  <tr><td>طبقية متناسبة <span class="fr">(stratifié proportionnel)</span></td><td>نفس <b>النسبة</b> من كل شركة (دلتا 66 % في العينة كما في الواقع)</td></tr>
+  <tr><td>طبقية غير متناسبة <span class="fr">(stratifié non proportionnel)</span></td><td>نفس <b>العدد</b> من كل شركة (625) ← دلتا تنزل إلى 12,5 %</td></tr>
+  <tr><td>عنقودية <span class="fr">(par grappes)</span></td><td>سحب أيام كاملة عشوائياً (6 أيام)</td></tr>
+  <tr><td>طبقية زمنية <span class="fr">(stratifié temporel)</span></td><td>نفس النسبة من كل يوم من الـ 61 يوماً</td></tr>
+  <tr><td>بوتستراب <span class="fr">(bootstrap)</span></td><td>سحب <b>مع الإرجاع</b>: نفس الرحلة قد تُسحب مرتين (لذلك فيه أسطر مكررة، وهذا طبيعي)</td></tr>
+</table>
+<p>كل الطرق تستعمل «بذرة» <code>random_state = 42</code> لنحصل على <b>نفس النتيجة في كل مرة</b> <span class="fr">(reproductibilité)</span>.</p>
+<h3>كيف نقيس جودة العينة؟</h3>
+<ul>
+  <li><b>الخطأ المطلق</b> <span class="fr">(erreur absolue)</span> = |قيمة العينة − قيمة المجتمع|. مثال: 26,51 % − 26,25 % = 0,26 نقطة.</li>
+  <li><b>الخطأ النسبي</b> <span class="fr">(erreur relative)</span> = الخطأ المطلق ÷ قيمة المجتمع × 100. مثال: 0,26 ÷ 26,25 × 100 ≈ 1 %. يسمح بمقارنة مؤشرات بوحدات مختلفة.</li>
+  <li><b>درجة التمثيلية</b> <span class="fr">(score de représentativité)</span> = 100 − متوسط الأخطاء النسبية على 6 مؤشرات. 100 = مطابقة للمجتمع.</li>
+</ul>
+<h3>الترتيب (متوسط 100 سحبة لكل طريقة)</h3>
+<table>
+  <tr><th>الرتبة</th><th>الطريقة</th><th>الدرجة</th></tr>
+  <tr><td>1</td><td>منتظمة</td><td>96,7</td></tr>
+  <tr><td>2</td><td>طبقية حسب الشركة</td><td>96,1</td></tr>
+  <tr class="fort"><td>3</td><td>طبقية حسب اليوم ✔ (المختارة)</td><td>96,0</td></tr>
+  <tr><td>4</td><td>عشوائية بسيطة</td><td>95,8</td></tr>
+  <tr><td>5</td><td>بوتستراب</td><td>95,7</td></tr>
+  <tr><td>6</td><td>عنقودية</td><td>84,8 — غير مستقرة</td></tr>
+  <tr><td>7</td><td>طبقية غير متناسبة</td><td>71,8 — منحازة عمداً</td></tr>
+</table>
+<ul>
+  <li><b>العنقودية غير مستقرة</b>: نتائجها بين 18 % و36 % حسب الأيام المسحوبة، لأن التأخر يختلف كثيراً من يوم لآخر (من 10 % إلى 63 %).</li>
+  <li><b>غير المتناسبة منحازة</b> بطبيعتها؛ لكن إذا أعطينا كل رحلة <b>وزناً</b> <span class="fr">(repondération)</span>، نسترجع القيمة الصحيحة: 26,1 % مقابل 26,2 % في المجتمع.</li>
+  <li><b>اخترنا الطبقية حسب اليوم</b>: من المجموعة الأولى، أقل تذبذب، وكل الأيام الـ 61 ممثَّلة.</li>
+</ul>
+
+<h2>6. النتائج الرئيسية <span class="fr">(les insights)</span></h2>
+<div class="encadre">
+  <p><b>1. التأخر شائع:</b> <span class="num">26 %</span> من الرحلات تقلع بتأخر أكثر من 15 دقيقة، و8 % بأكثر من ساعة.</p>
+  <p><b>2. التأخر يكبر مع مرور اليوم:</b> ≈ <span class="num">12 %</span> صباحاً مقابل ≈ <span class="num">40 %</span> مساءً — أي 3 أضعاف، وفي كل أيام الأسبوع.</p>
+  <p><b>3. أثر الدومينو قابل للقياس:</b> إذا كانت الرحلة السابقة لنفس الطائرة متأخرة، تتأخر الرحلة التالية في <span class="num">50 %</span> من الحالات، مقابل <span class="num">24 %</span> فقط إذا كانت في الوقت. والفرق موجود في كل ساعة من اليوم.</p>
+  <p><b>4. التأخر يُحسم عند الإقلاع:</b> الارتباط بين تأخر الإقلاع وتأخر الوصول = <span class="num">0,98</span>. 20 % فقط من الرحلات المتأخرة تصل في الوقت. والمسافة لا علاقة لها بالتأخر (ارتباط 0,01).</p>
+  <p><b>5. الشركات ليست متساوية:</b> ساوث ويست (37 %) وفرونتيير (35 %) تتأخران ضعف إنديفور (18 %). وساوث ويست تنهار خاصة في المساء (≈ 80 % على الساعة 21).</p>
+  <p style="margin:0"><b>6. بعض الأيام استثنائية:</b> من 10 % إلى 63 % من الرحلات المتأخرة حسب اليوم (أسوأ يوم: 21 يوليو).</p>
+</div>
+<p><b>الخلاصة:</b> الرحلات تتأخر خاصة في آخر اليوم، لأن التأخر ينتقل من رحلة إلى أخرى لنفس الطائرة.
+<b>الحل المقترح:</b> حماية الرحلات الأولى في الصباح (هوامش زمنية على الأرض، طائرات احتياطية).</p>
+<div class="encadre o"><b>الارتباط ليس سببية</b> <span class="fr">(corrélation ≠ causalité)</span>: رحلتا نفس الطائرة تتشاركان نفس اليوم (الطقس، الازدحام)،
+لذلك بياناتنا تُظهر <b>ارتباطاً</b> وليس دليلاً قاطعاً على السببية. لكن BTS يعترف رسمياً بهذا السبب للتأخر
+<span class="fr">(« Aircraft Arriving Late »)</span>.</div>
+
+<h2>7. لوحة القيادة <span class="fr">(le dashboard)</span></h2>
+<p>مصنوعة بـ Streamlit وPlotly، ومنشورة على الإنترنت. فيها فلاتر (الفترة، الشركات، الساعات، أيام الأسبوع)، و5 مؤشرات رئيسية <span class="fr">(KPI)</span>، و7 تبويبات:</p>
+<ol>
+  <li><b>نظرة عامة:</b> التأخر حسب الساعة، حسب اليوم، يوماً بيوم، وخريطة حرارية يوم × ساعة.</li>
+  <li><b>أثر الدومينو:</b> 24 % مقابل 50 %، وتطوره حسب الساعة.</li>
+  <li><b>مقارنة شركتين:</b> ساعة بساعة.</li>
+  <li><b>الوجهات:</b> رسم فقاعات حسب المسافة ونسبة التأخر.</li>
+  <li><b>مختبر المعاينة:</b> نختار الطريقة والحجم والبذرة، فنرى الأخطاء والدرجة مباشرة، وترتيب الطرق.</li>
+  <li><b>جودة البيانات:</b> القيم الناقصة، المكررة، الشاذة، والأعمدة الثابتة.</li>
+  <li><b>النتائج والحدود.</b></li>
+</ol>
+<p><b>قواعد التصميم:</b> أزرق = الرحلات عموماً، برتقالي = التأخر وما نريد إبرازه، ألوان مختبرة لمن يعانون من عمى الألوان،
+عناوين تقول الخلاصة مباشرة، بدون زخرفة غير مفيدة <span class="fr">(data-ink ratio)</span>.</p>
+
+<h2>8. حدود الدراسة <span class="fr">(les limites)</span></h2>
+<ul>
+  <li>مطار واحد وشهران فقط في الصيف: لا يمكن تعميم النتائج تلقائياً.</li>
+  <li>لا توجد بيانات الطقس ولا الأسباب الرسمية للتأخر في هذا الملف.</li>
+  <li>لا نرى رحلات العودة إلى أتلانتا بين إقلاعين لنفس الطائرة.</li>
+  <li>دلتا تمثل 66 % من الرحلات.</li>
+  <li>كل العلاقات ارتباطات، وليست أدلة على السببية.</li>
+</ul>
+
+<h2>9. أسئلة الأستاذ المتوقعة — مع الجواب بالفرنسية</h2>
+
+<p class="q">لماذا اخترتِ هذه البيانات؟</p>
+<span class="dire">Données officielles et réelles, riches (61 colonnes), dans le transport, et l'immatriculation des avions permet un angle original : l'effet domino.</span>
+
+<p class="q">كيف عالجتِ القيم الناقصة؟</p>
+<span class="dire">Elles correspondent toutes aux vols annulés ou déviés. Je ne les ai pas remplies : inventer un retard pour un vol annulé n'aurait pas de sens.</span>
+
+<p class="q">لماذا أبقيتِ القيم الشاذة؟</p>
+<span class="dire">Ce sont de vrais retards, pas des erreurs. J'utilise des indicateurs robustes : la médiane et le % de vols en retard.</span>
+
+<p class="q">لماذا هذه الطريقة في المعاينة؟ هل العينة ممثِّلة؟</p>
+<span class="dire">J'ai comparé 7 méthodes avec l'erreur absolue, l'erreur relative et un score de représentativité sur 100 tirages. J'ai retenu le stratifié par jour : score 96, 26,5 % de retard contre 26,2 %, et les 61 jours représentés.</span>
+
+<p class="q">لماذا البوتستراب فيه أسطر مكررة؟</p>
+<span class="dire">Parce qu'il tire avec remise : un même vol peut être tiré deux fois. C'est normal.</span>
+
+<p class="q">ما هو أهم اكتشاف لك؟</p>
+<span class="dire">L'effet domino : si le vol précédent du même avion était en retard, le suivant l'est deux fois plus souvent (50 % contre 24 %), à chaque heure.</span>
+
+<p class="q">هل يمكن الحديث عن سببية؟</p>
+<span class="dire">Non. Ce sont des associations : les deux vols partagent la même journée (météo, affluence). L'effet est plausible et reconnu par le BTS, mais mes données seules ne le prouvent pas.</span>
+
+<p class="q">لماذا Streamlit؟</p>
+<span class="dire">Imposé par le cahier des charges, et adapté : tout en Python, filtres faciles, déploiement gratuit en ligne.</span>
+
+<p class="q">ماذا كنتِ ستضيفين لو كانت لديك بيانات أكثر؟</p>
+<span class="dire">La météo heure par heure, les causes officielles de retard, une année complète, et les vols arrivant à Atlanta.</span>
+
+<p class="q">كيف اختبرتِ الكود؟</p>
+<span class="dire">43 tests automatiques avec pytest : tailles des échantillons, proportions, fichier brut jamais modifié, démarrage du dashboard, filtres.</span>
+
+<h2>10. أرقام يجب حفظها</h2>
+<table>
+  <tr><th>الرقم</th><th>المعنى</th></tr>
+  <tr><td class="num">54 461 × 61</td><td>عدد الرحلات × عدد الأعمدة</td></tr>
+  <tr><td class="num">26 %</td><td>نسبة الرحلات المتأخرة (أكثر من 15 دقيقة)</td></tr>
+  <tr><td class="num">0 / 16 min</td><td>الوسيط / المتوسط للتأخر</td></tr>
+  <tr><td class="num">12 % → 40 %</td><td>التأخر صباحاً ← مساءً</td></tr>
+  <tr><td class="num">24 % → 50 %</td><td>أثر الدومينو (الرحلة السابقة في الوقت ← متأخرة)</td></tr>
+  <tr><td class="num">0,98</td><td>الارتباط بين تأخر الإقلاع والوصول</td></tr>
+  <tr><td class="num">37 % / 18 %</td><td>ساوث ويست / إنديفور</td></tr>
+  <tr><td class="num">10 % → 63 %</td><td>أهدأ يوم ← أسوأ يوم (21 يوليو)</td></tr>
+  <tr><td class="num">66 %</td><td>حصة دلتا من الرحلات</td></tr>
+  <tr><td class="num">7 · 96,0</td><td>عدد طرق المعاينة · درجة العينة المختارة</td></tr>
+</table>
+
+<h2>11. قاموس المصطلحات: فرنسي ← عربي</h2>
+<table>
+  <tr><th>بالفرنسية</th><th>بالعربية</th></tr>
+  <tr><td class="fr">Problématique</td><td>الإشكالية</td></tr>
+  <tr><td class="fr">Échantillonnage / échantillon</td><td>المعاينة / العينة</td></tr>
+  <tr><td class="fr">Population</td><td>المجتمع الإحصائي (كل البيانات)</td></tr>
+  <tr><td class="fr">Représentatif</td><td>ممثِّل (يشبه المجتمع)</td></tr>
+  <tr><td class="fr">Aléatoire / avec remise</td><td>عشوائي / مع الإرجاع</td></tr>
+  <tr><td class="fr">Stratifié / strate</td><td>طبقي / طبقة</td></tr>
+  <tr><td class="fr">Par grappes</td><td>عنقودي</td></tr>
+  <tr><td class="fr">Moyenne / médiane / écart-type</td><td>المتوسط / الوسيط / الانحراف المعياري</td></tr>
+  <tr><td class="fr">Valeurs manquantes / doublons</td><td>قيم ناقصة / أسطر مكررة</td></tr>
+  <tr><td class="fr">Valeurs aberrantes (outliers)</td><td>قيم شاذة</td></tr>
+  <tr><td class="fr">Corrélation ≠ causalité</td><td>الارتباط ليس سببية</td></tr>
+  <tr><td class="fr">Analyse univariée / bivariée / multivariée</td><td>تحليل أحادي / ثنائي / متعدد المتغيرات</td></tr>
+  <tr><td class="fr">Nuage de points (scatter plot)</td><td>رسم النقاط</td></tr>
+  <tr><td class="fr">Carte de chaleur (heatmap)</td><td>خريطة حرارية</td></tr>
+  <tr><td class="fr">Tableau de bord (dashboard)</td><td>لوحة القيادة</td></tr>
+  <tr><td class="fr">Indicateur clé (KPI)</td><td>مؤشر رئيسي</td></tr>
+  <tr><td class="fr">Reproductibilité</td><td>إمكانية تكرار النتيجة نفسها</td></tr>
+  <tr><td class="fr">Ponctualité</td><td>الانضباط في المواعيد</td></tr>
+</table>
+
+</body>
+</html>

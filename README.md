@@ -23,6 +23,7 @@ Projet final du module *Visualisation des Données* (Bac+2 Ingénierie des Donn�
 | Savoir **ce qui a été fait, étape par étape, et pourquoi** | [`docs/JOURNAL.md`](docs/JOURNAL.md) |
 | Comprendre **le dataset et chaque colonne** | [`docs/DATASET.md`](docs/DATASET.md) |
 | **Réviser** (notions, code expliqué, questions du prof, chiffres clés) | [`docs/A_APPRENDRE.md`](docs/A_APPRENDRE.md) |
+| Lire **l'explication complète en arabe** (étapes, dataset, résultats, questions) | [`docs/explication_arabe.pdf`](docs/explication_arabe.pdf) |
 | Relire **le cahier des charges** | [`docs/cahier_des_charges.md`](docs/cahier_des_charges.md) |
 | Voir **toute l'analyse** (exploration → insights) | [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) |
 | Ouvrir **le dashboard** | `streamlit run dashboard/app.py` (voir plus bas) |
